@@ -7,15 +7,22 @@ router.get('/get-logged-user', authMiddleware, async (req, res) => {
     try {
         const user = await User.findOne({ _id: req.body.userId });
 
+        if (!user) {
+            return res.status(404).send({
+                message: 'User not found.',
+                success: false,
+            });
+        }
+
         res.send({
-            meesage: 'User fetched successfully.',
+            message: 'User fetched successfully.',
             success: true,
             data: user,
         });
 
     } catch (error) {
-        res.status(400).send({
-            meesage: error.message,
+        res.status(500).send({
+            message: error.message,
             success: false,
         });
     }
@@ -27,14 +34,14 @@ router.get('/get-all-users', authMiddleware, async (req, res) => {
         const users = await User.find({ _id: { $ne: req.body.userId } });
 
         res.send({
-            meesage: 'All users fetched successfully.',
+            message: 'All users fetched successfully.',
             success: true,
             data: users,
         });
 
     } catch (error) {
-        res.status(400).send({
-            meesage: error.message,
+        res.status(500).send({
+            message: error.message,
             success: false,
         });
     }
