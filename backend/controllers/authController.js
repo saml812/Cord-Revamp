@@ -9,8 +9,15 @@ router.post('/signup', async (req, res) => {
         const user = await User.findOne({ email: req.body.email });
 
         if (user) {
-            return res.send({
+            return res.status(400).send({
                 message: 'User already exists.',
+                success: false,
+            });
+        }
+
+        if (!req.body.password || req.body.password.length < 8) {
+            return res.status(400).send({
+                message: 'Password must be at least 8 characters long.',
                 success: false,
             });
         }
@@ -21,13 +28,13 @@ router.post('/signup', async (req, res) => {
         const newUser = new User(req.body);
         await newUser.save();
 
-        res.send({
+        res.status(201).send({
             message: 'User created successfully.',
             success: true,
         })
 
     } catch (error) {
-        res.send({
+        res.status(500).send({
             message: error,
             success: false,
         });
@@ -39,7 +46,7 @@ router.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email: req.body.email });
         if (!user) {
-            return res.send({
+            return res.status(400).send({
                 message: 'User does not exist.',
                 success: false,
             });
@@ -47,7 +54,7 @@ router.post('/login', async (req, res) => {
 
         const isValid = await bcrypt.compare(req.body.password, user.password);
         if (!isValid) {
-            return res.send({
+            return res.status(400).send({
                 message: 'Invalid password.',
                 success: false,
             });
@@ -62,7 +69,7 @@ router.post('/login', async (req, res) => {
         });
 
     } catch (error) {
-        res.send({
+        res.status(500).send({
             message: error,
             success: false,
         });
