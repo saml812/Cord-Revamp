@@ -8,10 +8,10 @@ const db = mongoose.connection;
 
 // Check for DB connection
 db.on('connected', () => {
-    console.log('DB connected successfully!')
+    console.log('DB connected successfully: ' + db.name);
 });
 db.on('err', () => {
-    console.log('DB connection failed!')
+    console.log('DB connection failed!');
 });
 
 module.exports = db;
