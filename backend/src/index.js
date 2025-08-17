@@ -4,7 +4,7 @@ import cookieParser from "cookie-parser";
 
 import { connectDB } from "./lib/db.js";
 
-import authRoutes from "./routes/auth.route.js";
+import authRoutes from "./routes/authRoute.js";
 
 dotenv.config();
 
