@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useUserStore } from "../stores/useUserStore";
+import { toast } from "react-hot-toast";
 import { Camera, Mail, User, Edit2, Save, X, Lock, Eye, EyeOff } from "lucide-react";
 
 interface EditableField {
@@ -21,18 +22,7 @@ interface FormData {
 
 const ProfilePage = () => {
   const { authUser } = useAuthStore();
-  const {
-    isUpdatingProfilePicture,
-    isUpdatingProfile,
-    isUpdatingEmail,
-    isUpdatingPassword,
-    updateProfilePicture,
-    updateFirstName,
-    updateLastName,
-    updateEmail,
-    updatePassword
-  } = useUserStore();
-
+  const { isUpdatingProfilePicture, updateProfilePicture, updateFirstName, updateLastName, updateEmail, updatePassword } = useUserStore();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<EditableField>({
     firstName: false,
@@ -70,13 +60,12 @@ const ProfilePage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type and size
     if (!file.type.startsWith('image/')) {
       setUploadError("Please select an image file");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    if (file.size > 5 * 1024 * 1024) {
       setUploadError("Image size must be less than 5MB");
       return;
     }
@@ -87,11 +76,7 @@ const ProfilePage = () => {
     reader.onload = async () => {
       const base64Image = reader.result as string;
       setUploadError(null);
-      try {
-        await updateProfilePicture({ profilePic: base64Image });
-      } catch (error) {
-        // Error is handled in the store
-      }
+      await updateProfilePicture({ profilePic: base64Image });
     };
 
     reader.onerror = () => {
@@ -124,15 +109,28 @@ const ProfilePage = () => {
   const handleSave = async (field: keyof EditableField) => {
     try {
       if (field === "password") {
-        if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+        if (!formData.currentPassword) {
+          toast.error("Current password is required");
+          return;
+        }
+
+        if (!formData.newPassword) {
+          toast.error("New password is required");
+          return;
+        }
+
+        if (!formData.confirmPassword) {
+          toast.error("Please confirm your new password");
           return;
         }
 
         if (formData.newPassword !== formData.confirmPassword) {
+          toast.error("Passwords don't match");
           return;
         }
 
         if (formData.newPassword.length < 6) {
+          toast.error("Password must be at least 6 characters");
           return;
         }
 
@@ -147,17 +145,20 @@ const ProfilePage = () => {
       } else if (field === "email") {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
+          toast.error("Please enter a valid email address");
           return;
         }
 
         await updateEmail(formData.email);
       } else if (field === "firstName") {
         if (!formData.firstName.trim()) {
+          toast.error("First name is required");
           return;
         }
         await updateFirstName(formData.firstName);
       } else if (field === "lastName") {
         if (!formData.lastName.trim()) {
+          toast.error("Last name is required");
           return;
         }
         await updateLastName(formData.lastName);
@@ -165,6 +166,7 @@ const ProfilePage = () => {
 
       setIsEditing((prev) => ({ ...prev, [field]: false }));
     } catch (error: any) {
+      // Error is handled in the store
       console.error(`Error updating ${field}:`, error);
     }
   };
@@ -241,7 +243,6 @@ const ProfilePage = () => {
               onSave={handleSave}
               onCancel={handleCancel}
               onEdit={handleEdit}
-              isUpdating={isUpdatingProfile}
             />
 
             {/* Last Name */}
@@ -256,7 +257,6 @@ const ProfilePage = () => {
               onSave={handleSave}
               onCancel={handleCancel}
               onEdit={handleEdit}
-              isUpdating={isUpdatingProfile}
             />
 
             {/* Email */}
@@ -271,7 +271,6 @@ const ProfilePage = () => {
               onSave={handleSave}
               onCancel={handleCancel}
               onEdit={handleEdit}
-              isUpdating={isUpdatingEmail}
               type="email"
             />
 
@@ -283,7 +282,6 @@ const ProfilePage = () => {
               onSave={handleSave}
               formData={formData}
               onChange={handleInputChange}
-              isUpdating={isUpdatingPassword}
               showPassword={showPassword}
               togglePasswordVisibility={togglePasswordVisibility}
             />
@@ -316,7 +314,6 @@ const ProfilePage = () => {
   );
 };
 
-// Reusable components
 const EditableInput = ({
   label,
   field,
@@ -328,7 +325,6 @@ const EditableInput = ({
   onSave,
   onCancel,
   onEdit,
-  isUpdating,
   type = "text",
 }: any) => (
   <div className="space-y-1.5">
@@ -344,20 +340,17 @@ const EditableInput = ({
             value={value}
             onChange={(e) => onChange(field, e.target.value)}
             className="flex-1 px-4 py-2.5 bg-base-200 rounded-lg border border-base-content/20 focus:outline-none focus:ring-2 focus:ring-primary"
-            disabled={isUpdating}
             autoFocus
           />
           <button
             onClick={() => onSave(field)}
-            disabled={isUpdating || !value.trim() || value === authValue}
-            className="p-2 text-success hover:bg-success/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 text-success hover:bg-success/20 rounded-lg transition-colors"
             title="Save changes"
           >
             <Save className="w-4 h-4" />
           </button>
           <button
             onClick={() => onCancel(field)}
-            disabled={isUpdating}
             className="p-2 text-error hover:bg-error/20 rounded-lg transition-colors"
             title="Cancel"
           >
@@ -389,7 +382,6 @@ const PasswordSection = ({
   onSave,
   formData,
   onChange,
-  isUpdating,
   showPassword,
   togglePasswordVisibility,
 }: any) => (
@@ -408,7 +400,6 @@ const PasswordSection = ({
               value={formData.currentPassword}
               onChange={(e) => onChange("currentPassword", e.target.value)}
               className="w-full px-4 py-2.5 bg-base-200 rounded-lg border border-base-content/20 focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={isUpdating}
               autoFocus
             />
             <button
@@ -427,7 +418,6 @@ const PasswordSection = ({
               value={formData.newPassword}
               onChange={(e) => onChange("newPassword", e.target.value)}
               className="w-full px-4 py-2.5 bg-base-200 rounded-lg border border-base-content/20 focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={isUpdating}
             />
             <button
               type="button"
@@ -445,7 +435,6 @@ const PasswordSection = ({
               value={formData.confirmPassword}
               onChange={(e) => onChange("confirmPassword", e.target.value)}
               className="w-full px-4 py-2.5 bg-base-200 rounded-lg border border-base-content/20 focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={isUpdating}
             />
             <button
               type="button"
@@ -459,20 +448,13 @@ const PasswordSection = ({
           <div className="flex items-center gap-2 pt-2">
             <button
               onClick={() => onSave("password")}
-              disabled={
-                isUpdating ||
-                !formData.currentPassword ||
-                !formData.newPassword ||
-                !formData.confirmPassword
-              }
-              className="p-2 text-success hover:bg-success/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2 text-success hover:bg-success/20 rounded-lg transition-colors"
               title="Save new password"
             >
               <Save className="w-4 h-4" />
             </button>
             <button
               onClick={() => onCancel("password")}
-              disabled={isUpdating}
               className="p-2 text-error hover:bg-error/20 rounded-lg transition-colors"
               title="Cancel"
             >
