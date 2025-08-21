@@ -1,15 +1,15 @@
 import express from "express";
-import { checkAuth, login, logout, signup, updateProfile } from "../controllers/authController.js";
+import { checkAuth, login, logout, signup } from "../controllers/authController.js";
 import { protectRoute } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Public routes (no authentication required)
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
 
-router.put("/update-profile", protectRoute, updateProfile);
-
+// Protected route (authentication required)
 router.get("/check", protectRoute, checkAuth);
 
 export default router;

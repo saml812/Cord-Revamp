@@ -6,6 +6,8 @@ import cors from "cors";
 import { connectDB } from "./lib/db.js";
 
 import authRoutes from "./routes/authRoute.js";
+import userRoutes from "./routes/userRoute.js";
+import adminRoutes from "./routes/adminRoute.js";
 import messageRoutes from "./routes/messageRoute.js";
 
 dotenv.config();
@@ -21,6 +23,8 @@ app.use(cors({
 }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/message", messageRoutes);
 
 app.listen(PORT, () => {
