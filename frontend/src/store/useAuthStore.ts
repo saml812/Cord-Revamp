@@ -2,21 +2,29 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 
-interface User {
-  firstName: string,
-  lastName: string,
-  email: string,
-  password: string,
+interface SignupInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
 }
 
+interface LoginInput {
+  email: string;
+  password: string;
+}
+
+
 interface AuthState {
-  authUser: User | null;
+  authUser: SignupInput | null;
   isSigningUp: boolean;
   isLoggingIn: boolean;
   isUpdatingProfile: boolean;
   isCheckingAuth: boolean;
   checkAuth: () => Promise<void>;
-  signup: (data: User) => Promise<void>;
+  signup: (data: SignupInput) => Promise<void>;
+  login: (data: LoginInput) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -51,6 +59,29 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isSigningUp: false });
     }
   },
-  
+
+  login: async (data) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/login", data);
+      set({ authUser: res.data });
+      toast.success("Logged in successfully");
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
+  logout: async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
+      set({ authUser: null });
+      toast.success("Logged out successfully");
+    } catch (error: any) {
+      toast.error(error.response.data.message);
+    }
+  },
+
 }));
 
