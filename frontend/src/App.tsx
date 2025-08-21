@@ -8,7 +8,7 @@ import SettingsPage from "./pages/SettingsPage";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useAuthStore } from "./store/useAuthStore";
+import { useAuthStore } from "./stores/useAuthStore";
 import { useEffect } from "react";
 
 import { Loader } from "lucide-react";
