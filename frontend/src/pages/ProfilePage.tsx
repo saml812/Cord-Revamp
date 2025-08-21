@@ -192,9 +192,9 @@ const ProfilePage = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <img
-                src={authUser?.profilePic || "/plink.png"}
+                src={authUser?.profilePic}
                 alt="Profile"
-                className="size-32 rounded-full object-cover border-4 border-primary/20 shadow-md"
+                className="size-32 rounded-full object-fill border-4 border-primary/20 shadow-md"
               />
               <label
                 htmlFor="avatar-upload"
