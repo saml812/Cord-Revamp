@@ -21,18 +21,18 @@ interface FormData {
 
 const ProfilePage = () => {
   const { authUser } = useAuthStore();
-  const { 
+  const {
     isUpdatingProfilePicture,
-    isUpdatingProfile, 
-    isUpdatingEmail, 
-    isUpdatingPassword, 
-    updateProfilePicture, 
-    updateFirstName, 
-    updateLastName, 
-    updateEmail, 
-    updatePassword 
+    isUpdatingProfile,
+    isUpdatingEmail,
+    isUpdatingPassword,
+    updateProfilePicture,
+    updateFirstName,
+    updateLastName,
+    updateEmail,
+    updatePassword
   } = useUserStore();
-  
+
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<EditableField>({
     firstName: false,
@@ -46,8 +46,7 @@ const ProfilePage = () => {
     confirm: false
   });
 
-  // Initialize form data from authUser
-  const initializeFormData = (): FormData => ({
+  const [formData, setFormData] = useState<FormData>({
     firstName: authUser?.firstName || "",
     lastName: authUser?.lastName || "",
     email: authUser?.email || "",
@@ -56,9 +55,6 @@ const ProfilePage = () => {
     confirmPassword: "",
   });
 
-  const [formData, setFormData] = useState<FormData>(initializeFormData);
-
-  // Update form data when authUser changes (only for non-password fields)
   useEffect(() => {
     if (authUser) {
       setFormData(prev => ({
@@ -68,7 +64,7 @@ const ProfilePage = () => {
         email: authUser.email || "",
       }));
     }
-  }, [authUser?.firstName, authUser?.lastName, authUser?.email]);
+  }, [authUser]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,7 +114,6 @@ const ProfilePage = () => {
         confirmPassword: "",
       }));
     } else if (authUser) {
-      // Reset to authUser values
       setFormData((prev) => ({
         ...prev,
         [field]: authUser[field as keyof typeof authUser] || "",
@@ -142,7 +137,7 @@ const ProfilePage = () => {
         }
 
         await updatePassword(formData.currentPassword, formData.newPassword);
-        
+
         setFormData((prev) => ({
           ...prev,
           currentPassword: "",
@@ -424,7 +419,7 @@ const PasswordSection = ({
               {showPassword.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          
+
           <div className="relative">
             <input
               type={showPassword.new ? "text" : "password"}
@@ -442,7 +437,7 @@ const PasswordSection = ({
               {showPassword.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          
+
           <div className="relative">
             <input
               type={showPassword.confirm ? "text" : "password"}
@@ -460,7 +455,7 @@ const PasswordSection = ({
               {showPassword.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          
+
           <div className="flex items-center gap-2 pt-2">
             <button
               onClick={() => onSave("password")}

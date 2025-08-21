@@ -25,7 +25,7 @@ export const useUserStore = create<UserState>((set) => ({
     set({ isUpdatingProfilePicture: true });
     try {
       const res = await axiosInstance.put("/user/profile-picture", data);
-      useAuthStore.getState().updateAuthUser(res.data);
+      useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("Profile picture updated successfully");
     } catch (error: any) {
       toast.error(error.response?.data?.message);
@@ -38,7 +38,7 @@ export const useUserStore = create<UserState>((set) => ({
     set({ isUpdatingProfile: true });
     try {
       const res = await axiosInstance.put("/user/profile", { firstName });
-      useAuthStore.getState().updateAuthUser(res.data);
+      useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("First name updated successfully");
     } catch (error: any) {
       toast.error(error.response?.data?.message);
@@ -51,7 +51,7 @@ export const useUserStore = create<UserState>((set) => ({
     set({ isUpdatingProfile: true });
     try {
       const res = await axiosInstance.put("/user/profile", { lastName });
-      useAuthStore.getState().updateAuthUser(res.data);
+      useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("Last name updated successfully");
     } catch (error: any) {
       toast.error(error.response?.data?.message);
@@ -64,7 +64,7 @@ export const useUserStore = create<UserState>((set) => ({
     set({ isUpdatingEmail: true });
     try {
       const res = await axiosInstance.put("/user/profile", { email });
-      useAuthStore.getState().updateAuthUser(res.data);
+      useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("Email updated successfully");
     } catch (error: any) {
       toast.error(error.response?.data?.message);
