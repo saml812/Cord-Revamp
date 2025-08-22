@@ -180,7 +180,7 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-10 bg-base-200">
+    <div className="min-h-screen pb-10 bg-base-200">
       <div className="max-w-2xl mx-auto p-4 py-8">
         <div className="bg-base-100 rounded-xl p-6 space-y-8 shadow-lg">
           <div className="text-center">
@@ -192,7 +192,7 @@ const ProfilePage = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <img
-                src={authUser?.profilePic}
+                src={authUser?.profilePic || "plink.png"}
                 alt="Profile"
                 className="size-32 rounded-full object-fill border-4 border-primary/20 shadow-md"
               />

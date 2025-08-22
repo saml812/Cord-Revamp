@@ -28,7 +28,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen justify-center items-center pt-16">
+    <div className="min-h-screen justify-center items-center">
       <div className="flex flex-col justify-center items-center p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
           {/* Logo */}
