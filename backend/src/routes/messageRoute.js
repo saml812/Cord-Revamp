@@ -5,7 +5,7 @@ import {
   getChatPartners,
   getMessagesByUserId,
   sendMessage,
-} from "../controllers/message.controller.js";
+} from "../controllers/messageController.js";
 import { arcjetProtection } from "../middleware/arcjetMiddleware.js";
 
 const router = express.Router();
