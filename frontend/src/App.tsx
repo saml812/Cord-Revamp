@@ -31,7 +31,7 @@ const App = () => {
   )
 
   return (
-    <div data-theme={theme} className="pt-16">
+    <div data-theme={theme} className="mt-16">
       <Navbar />
 
       <Routes>

@@ -166,7 +166,6 @@ const ProfilePage = () => {
 
       setIsEditing((prev) => ({ ...prev, [field]: false }));
     } catch (error: any) {
-      // Error is handled in the store
       console.error(`Error updating ${field}:`, error);
     }
   };

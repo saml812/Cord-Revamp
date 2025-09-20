@@ -1,5 +1,5 @@
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -19,4 +19,19 @@ export interface SignupInput {
 export interface LoginInput {
   email: string;
   password: string;
+}
+
+export interface Message {
+  _id: string;
+  senderId: string;
+  receiverId: string;
+  text?: string;
+  image?: string;
+  createdAt: string;
+  isOptimistic?: boolean;
+}
+
+export interface MessageData {
+  text?: string;
+  image?: string;
 }

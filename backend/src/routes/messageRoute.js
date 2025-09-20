@@ -1,7 +1,7 @@
 import express from "express";
 import { protectRoute } from "../middleware/authMiddleware.js";
 import {
-  getUsers,
+  getContacts,
   getChatPartners,
   getMessagesByUserId,
   sendMessage,
@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.use(arcjetProtection, protectRoute);
 
-router.get("/contacts", getUsers);
+router.get("/contacts", getContacts);
 router.get("/chats", getChatPartners);
 router.get("/:id", getMessagesByUserId);
 router.post("/send/:id", sendMessage);
