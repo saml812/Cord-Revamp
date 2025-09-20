@@ -13,6 +13,11 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Password must be at least 6 characters" });
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
     const user = await User.findOne({ email });
 
     if (user) return res.status(400).json({ message: "Email already exists" });
@@ -96,29 +101,6 @@ export const checkAuth = (req, res) => {
     res.status(200).json(req.user);
   } catch (error) {
     console.log("Error in checkAuth controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
-
-export const updateUserRole = async (req, res) => {
-  try {
-    const { userId, newRole } = req.body;
-
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: "Only admins can update roles" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    user.role = newRole;
-    await user.save();
-
-    res.status(200).json({ message: "User role updated successfully", user });
-  } catch (error) {
-    console.log("Error in updateUserRole controller", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };

@@ -1,8 +1,11 @@
 import express from "express";
 import { checkAuth, login, logout, signup } from "../controllers/authController.js";
 import { protectRoute } from "../middleware/authMiddleware.js";
+import { arcjetProtection } from "../middleware/arcjetMiddleware.js";
 
 const router = express.Router();
+
+router.use(arcjetProtection);
 
 // Public routes (no authentication required)
 router.post("/signup", signup);
