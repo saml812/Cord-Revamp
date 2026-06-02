@@ -1,0 +1,4 @@
+export const ADMIN_CHAT_PAGE_SIZE = 10;
+export const ADMIN_MESSAGES_PREVIEW_LIMIT = 25;
+export const ADMIN_CONVERSATION_PAGE_SIZE = 25;
+export const ADMIN_AUDIT_PAGE_SIZE = 25;

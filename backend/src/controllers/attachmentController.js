@@ -42,7 +42,7 @@ export const downloadAttachment = async (req, res) => {
     }
 
     const filename = makeContentDispositionFilename(att.name || "download");
-    res.setHeader("Content-Disposition", `attachment; filename=\"${filename}\"`);
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     const contentType = upstream.headers.get("content-type") || att.type;
     if (contentType) res.setHeader("Content-Type", contentType);
 
@@ -54,7 +54,7 @@ export const downloadAttachment = async (req, res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.log("Error in downloadAttachment controller: ", message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

@@ -3,6 +3,13 @@ import toast from "react-hot-toast";
 import type { AxiosError } from "axios";
 import { axiosInstance } from "../lib/axios";
 import type { Message, User } from "../types/user";
+import type {
+  AdminUserMessagesResponse,
+  AuditLogsPage,
+  BanInput,
+} from "../components/admin/types";
+import { fetchAdminAuditLogs, fetchAdminUserMessages } from "./adminApi";
+import { sameId } from "../components/admin/messageUtils";
 
 type ApiErrorBody = { message?: string };
 
@@ -11,25 +18,6 @@ function getApiErrorMessage(error: unknown, fallback: string) {
   return axiosError?.response?.data?.message || fallback;
 }
 
-export type AdminChat = {
-  partner: User;
-  lastMessageAt: string | null;
-  messages: Message[];
-};
-
-export type AdminUserMessagesResponse = {
-  userId: string;
-  chatCount: number;
-  messageCount: number;
-  chats: AdminChat[];
-};
-
-type BanInput =
-  | { value: false }
-  | { value: true; indefinite?: true }
-  | { value: true; until: string }
-  | { value: true; durationSeconds: number };
-
 interface AdminState {
   users: User[];
   selectedUser: User | null;
@@ -37,6 +25,8 @@ interface AdminState {
   isUserActionLoading: boolean;
   userMessages: AdminUserMessagesResponse | null;
   isUserMessagesLoading: boolean;
+  auditLogs: AuditLogsPage | null;
+  isAuditLogsLoading: boolean;
 
   fetchUsers: () => Promise<void>;
   selectUser: (user: User | null) => void;
@@ -47,9 +37,11 @@ interface AdminState {
   lockUser: (userId: string, value: boolean) => Promise<void>;
   banUser: (userId: string, input: BanInput) => Promise<void>;
 
-  fetchUserMessages: (userId: string) => Promise<void>;
+  fetchUserMessages: (userId: string, params?: { chatPage?: number }) => Promise<void>;
   clearUserMessages: () => void;
   applyAdminNewMessage: (message: Message) => void;
+
+  fetchAuditLogs: (params?: { page?: number }) => Promise<void>;
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -59,12 +51,14 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   isUserActionLoading: false,
   userMessages: null,
   isUserMessagesLoading: false,
+  auditLogs: null,
+  isAuditLogsLoading: false,
 
   fetchUsers: async () => {
     set({ isUsersLoading: true });
     try {
-      const res = await axiosInstance.get<User[]>("/admin/users");
-      set({ users: res.data });
+      const res = await axiosInstance.get<{ data: User[] }>("/admin/users");
+      set({ users: res.data.data });
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to fetch users"));
     } finally {
@@ -145,13 +139,12 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     }
   },
 
-  fetchUserMessages: async (userId) => {
+  fetchUserMessages: async (userId, params) => {
     set({ isUserMessagesLoading: true });
     try {
-      const res = await axiosInstance.get<AdminUserMessagesResponse>(
-        `/admin/user/${userId}/messages`,
-      );
-      set({ userMessages: res.data });
+      const chatPage = params?.chatPage ?? 1;
+      const data = await fetchAdminUserMessages(userId, chatPage);
+      set({ userMessages: data });
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to fetch user messages"));
     } finally {
@@ -167,28 +160,28 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     if (!selected || !current) return;
 
     const selectedId = selected._id;
-    const senderId = message.senderId?.toString();
-    const receiverId = message.receiverId?.toString();
-    if (senderId !== selectedId && receiverId !== selectedId) return;
+    const senderId = message.senderId;
+    const receiverId = message.receiverId;
+    if (!sameId(senderId, selectedId) && !sameId(receiverId, selectedId)) return;
 
-    for (const chat of current.chats) {
-      if (chat.messages.some((m) => m._id === message._id)) return;
-    }
+    if (current.chats.some((c) => c.messages.some((m) => m._id === message._id))) return;
 
-    const partnerId = senderId === selectedId ? receiverId : senderId;
+    const partnerId = sameId(senderId, selectedId) ? receiverId : senderId;
     if (!partnerId) return;
 
-    const nextChats = current.chats.map((c) => ({ ...c, messages: [...c.messages] }));
-    const idx = nextChats.findIndex((c) => c.partner?._id === partnerId);
+    const chatIndex = current.chats.findIndex((c) => sameId(c.partner?._id, partnerId));
+    if (chatIndex < 0) return;
 
     const createdAt = message.createdAt ?? new Date().toISOString();
-
-    if (idx >= 0) {
-      nextChats[idx].messages.push(message);
-      nextChats[idx].lastMessageAt = createdAt;
-    } else {
-      return;
-    }
+    const nextChats = current.chats.map((c, i) =>
+      i === chatIndex
+        ? {
+          ...c,
+          messages: [...c.messages, message],
+          lastMessageAt: createdAt,
+        }
+        : c,
+    );
 
     nextChats.sort((a, b) => {
       const at = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
@@ -199,10 +192,26 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     set({
       userMessages: {
         ...current,
-        messageCount: current.messageCount + 1,
+        returnedMessageCount: current.returnedMessageCount + 1,
+        totalMessageCount: current.totalMessageCount + 1,
         chats: nextChats,
       },
     });
   },
+
+  fetchAuditLogs: async (params) => {
+    set({ isAuditLogsLoading: true });
+    try {
+      const current = get().auditLogs;
+      const page = params?.page ?? current?.page ?? 1;
+      const data = await fetchAdminAuditLogs(page);
+      set({ auditLogs: data });
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to fetch audit logs"));
+    } finally {
+      set({ isAuditLogsLoading: false });
+    }
+  },
 }));
 
+export type { AdminUserMessagesResponse, BanInput } from "../components/admin/types";

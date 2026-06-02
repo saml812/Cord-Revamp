@@ -12,7 +12,7 @@ function ProfileHeader() {
   const isOnline = Boolean(authUser && isSocketConnected && onlineUsers.includes(authUser._id));
 
   return (
-    <div className="p-6 border-b border-base-500/50 bg-transparent">
+    <div className="p-4 sm:p-6 border-b border-base-500/50 bg-transparent shrink-0">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* AVATAR */}

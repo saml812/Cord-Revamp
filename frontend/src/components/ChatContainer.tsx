@@ -6,6 +6,7 @@ import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
 import LinkifiedText from "./LinkifiedText";
+import MessageAttachment from "./MessageAttachment";
 
 function ChatContainer() {
   const {
@@ -44,7 +45,7 @@ function ChatContainer() {
   return (
     <>
       <ChatHeader />
-      <div className="flex-1 px-6 overflow-y-auto py-8">
+      <div className="flex-1 px-4 sm:px-6 overflow-y-auto py-4 sm:py-8 min-h-0">
         {messages.length > 0 && !isMessagesLoading ? (
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((msg) => (
@@ -58,26 +59,10 @@ function ChatContainer() {
                     : "bg-base-100 text-base-content border border-base-300/60"
                     }`}
                 >
-                  {msg.attachment?.kind === "image" && msg.attachment.url && (
-                    <img src={msg.attachment.url} alt="Shared" className="rounded-lg h-48 object-cover" />
-                  )}
-                  {msg.attachment?.kind === "file" && msg.attachment.url && (
-                    <a
-                      href={`http://localhost:3000/api/messages/attachments/${msg._id}/download`}
-                      download={msg.attachment.name}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={[
-                        "mt-2 inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                        msg.senderId === authUser?._id
-                          ? "border-primary-content/30 bg-primary/20"
-                          : "border-base-400/50 bg-base-200",
-                      ].join(" ")}
-                    >
-                      <span className="truncate max-w-[220px]">{msg.attachment.name || "Download file"}</span>
-                      <span className="opacity-70">↗</span>
-                    </a>
-                  )}
+                  <MessageAttachment
+                    message={msg}
+                    tone={msg.senderId === authUser?._id ? "outgoing" : "incoming"}
+                  />
                   {msg.text && (
                     <LinkifiedText
                       text={msg.text}

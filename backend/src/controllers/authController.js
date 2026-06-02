@@ -1,6 +1,7 @@
 import { generateToken } from "../lib/utils.js";
 import User from "../models/user.js";
 import bcrypt from "bcryptjs";
+import { ENV } from "../lib/env.js";
 
 export const signup = async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
@@ -62,6 +63,29 @@ export const login = async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Owner bootstrap (optional): if OWNER_EMAIL matches and no owner exists, promote.
+    const ownerEmail = ENV.OWNER_EMAIL ? String(ENV.OWNER_EMAIL).trim().toLowerCase() : "";
+    if (ownerEmail && String(user.email).toLowerCase() === ownerEmail) {
+      const hasOwner = await User.exists({ role: "owner" });
+      if (!hasOwner && user.role !== "owner") {
+        user.role = "owner";
+        await user.save();
+      }
+    }
+
+    // Block banned/locked at login
+    if (user.isBanned) {
+      const until = user.banUntil ? new Date(user.banUntil).getTime() : null;
+      const isActive = until === null ? true : until > Date.now();
+      if (isActive) {
+        return res.status(403).json({ message: "Account banned", banUntil: user.banUntil ?? null });
+      }
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({ message: "Account locked" });
     }
 
     const isValid = await bcrypt.compare(password, user.password);

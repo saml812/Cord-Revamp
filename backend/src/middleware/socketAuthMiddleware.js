@@ -26,6 +26,19 @@ export const socketAuthMiddleware = async (socket, next) => {
       return next(new Error("User not found"));
     }
 
+    // Block banned/locked users from connecting sockets
+    if (user.isBanned) {
+      const until = user.banUntil ? new Date(user.banUntil).getTime() : null;
+      const isActive = until === null ? true : until > Date.now();
+      if (isActive) {
+        return next(new Error("Account banned"));
+      }
+    }
+
+    if (user.isLocked) {
+      return next(new Error("Account locked"));
+    }
+
     // Attach user info to socket
     socket.user = user;
     socket.userId = user._id.toString();
@@ -35,7 +48,7 @@ export const socketAuthMiddleware = async (socket, next) => {
     console.log(`Socket authenticated for user: ${displayName} (${user._id})`);
 
     next();
-  } catch (error) {
+  } catch (_error) {
     next(new Error("Unauthorized - Authentication failed"));
   }
 };

@@ -2,7 +2,7 @@ import User from "../models/user.js";
 import Message from "../models/message.js";
 
 import cloudinary from "../lib/cloudinary.js";
-import { getAdminsRoomName, getIO, getReceiverSocketId } from "../lib/socket.js";
+import { getAdminsRoomName, getIO, getOwnersRoomName, getReceiverSocketId } from "../lib/socket.js";
 
 async function uploadBuffer(buffer, { resource_type }) {
   return await new Promise((resolve, reject) => {
@@ -25,7 +25,7 @@ export const getContacts = async (req, res) => {
         res.status(200).json(filteredUsers);
     } catch (error) {
         console.error("Error in getUsers: ", error.message);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -52,7 +52,7 @@ export const getChatPartners = async (req, res) => {
     res.status(200).json(chatPartners);
   } catch (error) {
     console.error("Error in getChatPartners: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -71,7 +71,7 @@ export const getMessagesByUserId = async (req, res) => {
     res.status(200).json(messages);
   } catch (error) {
     console.log("Error in getMessages controller: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -145,12 +145,20 @@ export const sendMessage = async (req, res) => {
       getIO().to(receiverSocketId).emit("newMessage", newMessage);
     }
 
-    // Admin/owner monitoring (admin panel realtime)
-    getIO().to(getAdminsRoomName()).emit("admin:newMessage", newMessage);
+    // Admin panel realtime:
+    // - owners can see all message events
+    // - admins must not receive owner-involved message events
+    getIO().to(getOwnersRoomName()).emit("admin:newMessage", newMessage);
+    const senderIsOwner = req.user?.role === "owner";
+    const receiver = await User.findById(receiverId).select("role");
+    const receiverIsOwner = receiver?.role === "owner";
+    if (!senderIsOwner && !receiverIsOwner) {
+      getIO().to(getAdminsRoomName()).emit("admin:newMessage", newMessage);
+    }
 
     res.status(201).json(newMessage);
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 };

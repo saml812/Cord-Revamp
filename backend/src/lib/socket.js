@@ -4,6 +4,7 @@ import { socketAuthMiddleware } from "../middleware/socketAuthMiddleware.js";
 
 const userSocketMap = {}; // { [userId: string]: socketId }
 const ADMINS_ROOM = "admins";
+const OWNERS_ROOM = "owners";
 
 /** @type {import("socket.io").Server | null} */
 let io = null;
@@ -30,9 +31,8 @@ export function initSocket(server) {
     const userId = socket.userId;
     if (userId) userSocketMap[userId] = socket.id;
 
-    if (socket.user?.role === "admin" || socket.user?.role === "owner") {
-      socket.join(ADMINS_ROOM);
-    }
+    if (socket.user?.role === "admin") socket.join(ADMINS_ROOM);
+    if (socket.user?.role === "owner") socket.join(OWNERS_ROOM);
 
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
@@ -57,4 +57,8 @@ export function getIO() {
 
 export function getAdminsRoomName() {
   return ADMINS_ROOM;
+}
+
+export function getOwnersRoomName() {
+  return OWNERS_ROOM;
 }

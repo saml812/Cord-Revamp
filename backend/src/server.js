@@ -16,7 +16,7 @@ import messageRoutes from "./routes/messageRoute.js";
 
 dotenv.config();
 const app = express();
-// const __dirname = path.resolve();
+const __dirname = path.resolve();
 
 const PORT = ENV.PORT || 3000;
 

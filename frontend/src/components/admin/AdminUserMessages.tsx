@@ -1,69 +1,80 @@
-import type { AdminUserMessagesResponse } from "../../stores/useAdminStore";
-import type { Message, User } from "../../types/user";
-import { Loader } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft } from "lucide-react";
+import type { AdminUserMessagesResponse } from "./types";
+import type { User } from "../../types/user";
+import AdminCard from "./AdminCard";
+import AdminPagination from "./AdminPagination";
+import AdminLoading from "./AdminLoading";
+import AdminChatList from "./AdminChatList";
+import AdminConversationView from "./AdminConversationView";
 import { formatName } from "./utils";
-
-function formatAttachmentLabel(message: Message) {
-  return message.attachment?.name ?? message.attachment?.url ?? "Attachment";
-}
 
 type Props = {
   selectedUser: User;
   isLoading: boolean;
   data: AdminUserMessagesResponse | null;
+  onPrev: () => void;
+  onNext: () => void;
 };
 
-export default function AdminUserMessages({ selectedUser, isLoading, data }: Props) {
+export default function AdminUserMessages({ selectedUser, isLoading, data, onPrev, onNext }: Props) {
+  const [activePartnerId, setActivePartnerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActivePartnerId(null);
+  }, [selectedUser._id]);
+
+  const openChat = useMemo(() => {
+    if (!data || !activePartnerId) return null;
+    return data.chats.find((c) => c.partner._id === activePartnerId) ?? null;
+  }, [data, activePartnerId]);
+
+  const isConversationView = Boolean(activePartnerId && openChat);
+  const conversationTitle =
+    isConversationView && openChat ? formatName(openChat.partner) : "DM messages";
+
   return (
-    <div className="p-4 rounded-xl bg-base-100 border border-base-300">
-      <div className="font-semibold mb-3">DM messages</div>
+    <div className={isConversationView ? "flex-1 min-h-0 flex flex-col min-w-0" : "min-w-0"}>
+    <AdminCard
+      title={isConversationView ? conversationTitle : "DM messages"}
+      className={isConversationView ? "flex flex-col flex-1 min-h-0 !p-3 sm:!p-4" : ""}
+      contentClassName={isConversationView ? "flex-1 min-h-0 flex flex-col" : "space-y-3"}
+      headerLeft={
+        isConversationView ? (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-circle shrink-0 -ml-1"
+            onClick={() => setActivePartnerId(null)}
+            aria-label="Back to chat list"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        ) : undefined
+      }
+      headerRight={
+        <AdminPagination
+          onPrev={onPrev}
+          onNext={onNext}
+          prevDisabled={!data || data.chatsPage <= 1 || isConversationView}
+          nextDisabled={!data || !data.chatsTotalPages || data.chatsPage >= data.chatsTotalPages || isConversationView}
+        />
+      }
+    >
       {isLoading ? (
-        <div className="flex items-center gap-2 opacity-70">
-          <Loader className="size-4 animate-spin" />
-          Loading…
-        </div>
+        <AdminLoading />
       ) : !data ? (
         <div className="opacity-70">No data.</div>
+      ) : isConversationView && openChat ? (
+        <AdminConversationView
+          subjectUser={selectedUser}
+          chat={openChat}
+          messagesLimitPerChat={data.messagesLimitPerChat}
+          onBack={() => setActivePartnerId(null)}
+        />
       ) : (
-        <div className="space-y-4">
-          <div className="text-sm opacity-70">
-            Chats: {data.chatCount} • Messages: {data.messageCount}
-          </div>
-
-          {data.chats.map((chat) => (
-            <div key={chat.partner._id} className="border border-base-300 rounded-xl overflow-hidden">
-              <div className="p-3 bg-base-200 flex items-center justify-between">
-                <div className="font-semibold truncate">
-                  {formatName(chat.partner)}
-                  <span className="opacity-60 font-normal"> ({chat.partner.email})</span>
-                </div>
-                <div className="text-xs opacity-70">
-                  Last: {chat.lastMessageAt ? new Date(chat.lastMessageAt).toLocaleString() : "—"}
-                </div>
-              </div>
-              <div className="max-h-64 overflow-y-auto p-3 space-y-2 bg-base-100">
-                {chat.messages.map((m) => (
-                  <div key={m._id} className="text-sm">
-                    <div className="opacity-70 text-xs">
-                      {m.senderId === selectedUser._id ? "User" : "Partner"} •{" "}
-                      {new Date(m.createdAt).toLocaleString()}
-                    </div>
-                    {m.text && <div className="whitespace-pre-wrap">{m.text}</div>}
-                    {m.attachment?.url && (
-                      <a className="link" href={m.attachment.url} target="_blank" rel="noreferrer">
-                        Attachment: {formatAttachmentLabel(m)}
-                      </a>
-                    )}
-                  </div>
-                ))}
-                {chat.messages.length === 0 && <div className="opacity-70">No messages.</div>}
-              </div>
-            </div>
-          ))}
-          {data.chats.length === 0 && <div className="opacity-70">No chats.</div>}
-        </div>
+        <AdminChatList data={data} onViewChat={setActivePartnerId} />
       )}
+    </AdminCard>
     </div>
   );
 }
-

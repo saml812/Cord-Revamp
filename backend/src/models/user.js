@@ -40,6 +40,14 @@ const userSchema = mongoose.Schema({
         type: Boolean,
         default: false
     },
+    lockUntil: {
+      type: Date,
+      default: null
+    },
+    lockReason: {
+      type: String,
+      default: ""
+    },
     status: {
       type: String,
       enum: ['Active', 'Banned', 'Locked'],

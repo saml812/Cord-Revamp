@@ -72,7 +72,7 @@ function MessageInput() {
   };
 
   return (
-    <div className="p-4 border-t border-base-500/50 bg-base-100">
+    <div className="p-3 sm:p-4 border-t border-base-500/50 bg-base-100 shrink-0">
       {selectedFile && (
         <div className="max-w-3xl mx-auto mb-3 flex items-center">
           <div className="relative">

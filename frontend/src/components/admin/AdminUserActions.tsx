@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { User } from "../../types/user";
-import { formatBanUntil } from "./utils";
+import type { BanInput } from "./types";
+import AdminCard from "./AdminCard";
+import { canUnbanUser, formatBanUntil, isBanActive } from "./utils";
 
 type Props = {
   authUser: User;
@@ -9,14 +11,7 @@ type Props = {
   isUserActionLoading: boolean;
   updateUserRole: (userId: string, newRole: User["role"]) => void | Promise<void>;
   lockUser: (userId: string, value: boolean) => void | Promise<void>;
-  banUser: (
-    userId: string,
-    input:
-      | { value: false }
-      | { value: true; indefinite?: true }
-      | { value: true; until: string }
-      | { value: true; durationSeconds: number },
-  ) => void | Promise<void>;
+  banUser: (userId: string, input: BanInput) => void | Promise<void>;
   deleteUser: (userId: string) => void | Promise<void>;
 };
 
@@ -34,11 +29,12 @@ export default function AdminUserActions(props: Props) {
 
   const [banMode, setBanMode] = useState<"indefinite" | "duration">("indefinite");
   const [banSeconds, setBanSeconds] = useState(3600);
+  const userIsBanned = isBanActive(selectedUser);
+  const userCanUnban = canUnbanUser(selectedUser);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-      <div className="p-4 rounded-xl bg-base-100 border border-base-300">
-        <div className="font-semibold mb-3">Role</div>
+      <AdminCard title="Role">
         <div className="flex gap-2 flex-wrap">
           <button
             type="button"
@@ -67,10 +63,9 @@ export default function AdminUserActions(props: Props) {
             </button>
           )}
         </div>
-      </div>
+      </AdminCard>
 
-      <div className="p-4 rounded-xl bg-base-100 border border-base-300">
-        <div className="font-semibold mb-3">Lock</div>
+      <AdminCard title="Lock">
         <div className="flex gap-2">
           <button
             type="button"
@@ -89,17 +84,19 @@ export default function AdminUserActions(props: Props) {
             Unlock
           </button>
         </div>
-      </div>
+      </AdminCard>
 
-      <div className="p-4 rounded-xl bg-base-100 border border-base-300 md:col-span-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="font-semibold">Ban</div>
+      <AdminCard
+        title="Ban"
+        className="md:col-span-2"
+        headerRight={
           <div className="text-xs opacity-70">
             Until: <span className="font-mono">{formatBanUntil(selectedUser.banUntil)}</span>
           </div>
-        </div>
+        }
+      >
 
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           <div className="flex gap-2">
             <button
               type="button"
@@ -134,7 +131,7 @@ export default function AdminUserActions(props: Props) {
             <button
               type="button"
               className="btn btn-sm btn-error rounded-xl"
-              disabled={isUserActionLoading || !canManageSelected}
+              disabled={isUserActionLoading || !canManageSelected || userIsBanned}
               onClick={() =>
                 banUser(
                   selectedUser._id,
@@ -149,17 +146,16 @@ export default function AdminUserActions(props: Props) {
             <button
               type="button"
               className="btn btn-sm rounded-xl"
-              disabled={isUserActionLoading || !canManageSelected}
+              disabled={isUserActionLoading || !canManageSelected || !userCanUnban}
               onClick={() => banUser(selectedUser._id, { value: false })}
             >
               Unban
             </button>
           </div>
         </div>
-      </div>
+      </AdminCard>
 
-      <div className="p-4 rounded-xl bg-base-100 border border-base-300 md:col-span-2">
-        <div className="font-semibold mb-3">Danger zone</div>
+      <AdminCard title="Danger zone" className="md:col-span-2">
         <button
           type="button"
           className="btn btn-sm btn-outline btn-error rounded-xl"
@@ -175,7 +171,7 @@ export default function AdminUserActions(props: Props) {
           Delete user
         </button>
         <div className="text-xs opacity-70 mt-2">Note: you can only manage accounts below your role.</div>
-      </div>
+      </AdminCard>
     </div>
   );
 }

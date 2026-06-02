@@ -1,5 +1,5 @@
 import type { User } from "../../types/user";
-import type { AdminTab } from "./utils";
+import type { AdminTab } from "./types";
 import { Loader, Shield } from "lucide-react";
 import { formatName } from "./utils";
 import AdminUserListItem from "./AdminUserListItem";
@@ -14,6 +14,7 @@ type Props = {
   users: User[];
   selectedUser: User | null;
   onSelectUser: (user: User) => void;
+  className?: string;
 };
 
 export default function AdminSidebar(props: Props) {
@@ -27,10 +28,13 @@ export default function AdminSidebar(props: Props) {
     users,
     selectedUser,
     onSelectUser,
+    className = "",
   } = props;
 
   return (
-    <div className="w-96 backdrop-blur-sm flex flex-col bg-base-100 border-r border-base-500/50">
+    <div
+      className={`w-full md:w-96 shrink-0 backdrop-blur-sm flex-col bg-base-100 border-r border-base-500/50 ${className}`}
+    >
       <div className="p-4 border-b border-base-300 flex items-center gap-3">
         <div className="size-10 rounded-lg bg-primary/10 flex items-center justify-center">
           <Shield className="w-5 h-5 text-primary" />
@@ -60,6 +64,14 @@ export default function AdminSidebar(props: Props) {
             Messages
           </button>
         </div>
+
+        <button
+          className={`btn btn-sm w-full rounded-xl ${activeTab === "audit" ? "btn-primary" : "btn-ghost"}`}
+          type="button"
+          onClick={() => setActiveTab("audit")}
+        >
+          Audit logs
+        </button>
 
         <label className="input input-bordered w-full rounded-xl flex items-center gap-2 bg-base-200 border-base-300 focus-within:border-primary">
           <input

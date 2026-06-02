@@ -7,6 +7,8 @@ import {
   lockUser,
   banUser,
   getUserMessages,
+  getConversationMessages,
+  getAuditLogs,
 } from "../controllers/adminController.js";
 import { protectRoute, allowRoles } from "../middleware/authMiddleware.js";
 import { arcjetProtection } from "../middleware/arcjetMiddleware.js";
@@ -24,5 +26,7 @@ router.delete("/user/:userId", deleteUser);
 router.patch("/user/:userId/lock", lockUser);
 router.patch("/user/:userId/ban", banUser);
 router.get("/user/:userId/messages", getUserMessages);
+router.get("/user/:userId/messages/:partnerId", getConversationMessages);
+router.get("/audit-logs", getAuditLogs);
 
 export default router;
