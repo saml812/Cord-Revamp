@@ -3,8 +3,12 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: "user" | "admin" | "owner";
   profilePic?: string;
+  isBanned?: boolean;
+  banUntil?: string | null;
+  isLocked?: boolean;
+  status?: "Active" | "Banned" | "Locked";
   createdAt?: string;
   updatedAt?: string;
 }

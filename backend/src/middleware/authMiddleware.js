@@ -22,6 +22,23 @@ export const protectRoute = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    if (user.isBanned) {
+      const until = user.banUntil ? new Date(user.banUntil).getTime() : null;
+      const isActive = until === null ? true : until > Date.now();
+      if (isActive) {
+        return res.status(403).json({
+          message: "Account banned",
+          banUntil: user.banUntil ?? null,
+        });
+      }
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({
+        message: "Account locked",
+      });
+    }
+
     req.user = user;
     next();
   } catch (error) {

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
-import { LogOut, MessageSquare, Settings, User } from "lucide-react";
+import { LogOut, MessageSquare, Settings, Shield, User } from "lucide-react";
 
 const Navbar = () => {
   const { logout, authUser } = useAuthStore();
@@ -31,6 +31,12 @@ const Navbar = () => {
 
             {authUser && (
               <>
+                {(authUser.role === "admin" || authUser.role === "owner") && (
+                  <Link to={"/admin"} className={`btn btn-sm gap-2`}>
+                    <Shield className="w-5 h-5" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </Link>
+                )}
                 <Link to={"/profile"} className={`btn btn-sm gap-2`}>
                   <User className="w-5 h-5" />
                   <span className="hidden sm:inline">Profile</span>

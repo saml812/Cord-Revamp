@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import type { AxiosError } from "axios";
 import type { User, SignupInput, LoginInput } from "../types/user";
 import { io, type Socket } from "socket.io-client";
+import axios from "axios";
 
 type ApiErrorBody = { message?: string };
 
@@ -13,6 +14,7 @@ function getApiErrorMessage(error: unknown, fallback: string) {
 }
 
 const BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000" : "/";
+const API_BASE_URL = import.meta.env.MODE === "development" ? "http://localhost:3000/api" : "/api";
 
 interface AuthState {
   authUser: User | null;
@@ -23,6 +25,7 @@ interface AuthState {
   signup: (data: SignupInput) => Promise<void>;
   login: (data: LoginInput) => Promise<void>;
   logout: () => Promise<void>;
+  forceLogout: (message?: string) => void;
   updateAuthUser: (user: User) => void;
   onlineUsers: string[];
   isSocketConnected: boolean;
@@ -92,6 +95,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  forceLogout: (message) => {
+    // Best-effort server logout (clears httpOnly cookie). Use a raw request
+    // to avoid triggering axiosInstance interceptors and causing request loops.
+    axios
+      .post(`${API_BASE_URL}/auth/logout`, null, { withCredentials: true })
+      .catch(() => {});
+    set({ authUser: null });
+    get().disconnectSocket();
+    if (message) toast.error(message);
+    // Hard redirect to ensure app state is reset.
+    window.location.assign("/login");
+  },
+
   updateAuthUser: (user: User) => {
     set({ authUser: user });
   },
@@ -117,6 +133,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ onlineUsers: userIds });
     });
 
+    socket.on("accountStatusChanged", (payload: { isLocked?: boolean; isBanned?: boolean }) => {
+      if (payload?.isBanned) get().forceLogout("You were banned.");
+      else if (payload?.isLocked) get().forceLogout("Your account was locked.");
+    });
+
     set({ socket });
   },
 
@@ -126,6 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     socket.off("connect");
     socket.off("disconnect");
     socket.off("getOnlineUsers");
+    socket.off("accountStatusChanged");
     socket.disconnect();
     set({ socket: null, onlineUsers: [], isSocketConnected: false });
   },

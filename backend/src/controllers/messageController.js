@@ -2,7 +2,7 @@ import User from "../models/user.js";
 import Message from "../models/message.js";
 
 import cloudinary from "../lib/cloudinary.js";
-import { getIO, getReceiverSocketId } from "../lib/socket.js";
+import { getAdminsRoomName, getIO, getReceiverSocketId } from "../lib/socket.js";
 
 async function uploadBuffer(buffer, { resource_type }) {
   return await new Promise((resolve, reject) => {
@@ -144,6 +144,9 @@ export const sendMessage = async (req, res) => {
     if (receiverSocketId) {
       getIO().to(receiverSocketId).emit("newMessage", newMessage);
     }
+
+    // Admin/owner monitoring (admin panel realtime)
+    getIO().to(getAdminsRoomName()).emit("admin:newMessage", newMessage);
 
     res.status(201).json(newMessage);
   } catch (error) {
