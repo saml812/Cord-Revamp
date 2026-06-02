@@ -2,6 +2,20 @@ import User from "../models/user.js";
 import Message from "../models/message.js";
 
 import cloudinary from "../lib/cloudinary.js";
+import { getIO, getReceiverSocketId } from "../lib/socket.js";
+
+async function uploadBuffer(buffer, { resource_type }) {
+  return await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "cord/messages", resource_type },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      },
+    );
+    stream.end(buffer);
+  });
+}
 
 export const getContacts = async (req, res) => {
     try {
@@ -67,8 +81,12 @@ export const sendMessage = async (req, res) => {
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    if (!text && !image) {
-      return res.status(400).json({ message: "Text or image is required." });
+    const hasText = Boolean(text && String(text).trim());
+    const hasBase64Image = Boolean(image);
+    const hasFile = Boolean(req.file);
+
+    if (!hasText && !hasBase64Image && !hasFile) {
+      return res.status(400).json({ message: "Text, image, or file is required." });
     }
     if (senderId.equals(receiverId)) {
       return res.status(400).json({ message: "Cannot send messages to yourself." });
@@ -78,23 +96,54 @@ export const sendMessage = async (req, res) => {
       return res.status(404).json({ message: "Receiver not found." });
     }
 
-    let imageUrl;
-    if (image) {
-      // upload base64 image to cloudinary
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
+    let attachment;
+
+    if (req.file) {
+      const isImage = req.file.mimetype?.startsWith("image/");
+      const resourceType = isImage ? "image" : "raw";
+      const uploadResponse = await uploadBuffer(req.file.buffer, { resource_type: resourceType });
+
+      attachment = {
+        kind: isImage ? "image" : "file",
+        url: uploadResponse.secure_url,
+        publicId: uploadResponse.public_id,
+        version: uploadResponse.version,
+        resourceType: uploadResponse.resource_type,
+        format: uploadResponse.format,
+        name: req.file.originalname,
+        type: req.file.mimetype,
+        size: req.file.size,
+      };
+    } else if (image) {
+      const uploadResponse = await cloudinary.uploader.upload(image, {
+        folder: "cord/messages",
+        resource_type: "image",
+      });
+      attachment = {
+        kind: "image",
+        url: uploadResponse.secure_url,
+        publicId: uploadResponse.public_id,
+        version: uploadResponse.version,
+        resourceType: uploadResponse.resource_type,
+        format: uploadResponse.format,
+        name: "image",
+        type: "image/*",
+      };
     }
 
     const newMessage = new Message({
       senderId,
       receiverId,
-      text,
-      image: imageUrl,
+      text: hasText ? String(text).trim() : undefined,
+      attachment,
     });
 
     await newMessage.save();
 
-    //socket io
+    const receiverSocketId = getReceiverSocketId(receiverId.toString());
+    if (receiverSocketId) {
+      getIO().to(receiverSocketId).emit("newMessage", newMessage);
+    }
 
     res.status(201).json(newMessage);
   } catch (error) {

@@ -26,12 +26,23 @@ export interface Message {
   senderId: string;
   receiverId: string;
   text?: string;
-  image?: string;
+  attachment?: {
+    kind: "image" | "file";
+    publicId?: string;
+    version?: number;
+    resourceType?: string;
+    format?: string;
+    url: string;
+    name?: string;
+    type?: string;
+    size?: number;
+  };
   createdAt: string;
   isOptimistic?: boolean;
 }
 
 export interface MessageData {
   text?: string;
-  image?: string;
+  image?: string; // legacy base64 support
+  file?: File | null;
 }

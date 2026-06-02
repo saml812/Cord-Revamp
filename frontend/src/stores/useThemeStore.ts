@@ -6,7 +6,7 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>((set) => ({
   theme: localStorage.getItem("chat-theme") || "dracula",
-  setTheme: (theme: any) => {
+  setTheme: (theme) => {
     localStorage.setItem("chat-theme", theme);
     set({ theme });
   },

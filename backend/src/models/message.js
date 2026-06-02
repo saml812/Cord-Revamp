@@ -17,8 +17,16 @@ const messageSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2000,
     },
-    image: {
-      type: String,
+    attachment: {
+      kind: { type: String, enum: ["image", "file"] },
+      publicId: { type: String },
+      version: { type: Number },
+      resourceType: { type: String },
+      format: { type: String },
+      url: { type: String },
+      name: { type: String },
+      type: { type: String },
+      size: { type: Number },
     },
   },
   { timestamps: true }

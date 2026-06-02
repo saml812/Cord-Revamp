@@ -11,11 +11,11 @@ const HomePage = () => {
   const { activeTab, selectedUser } = useChatStore();
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-base flex items-center justify-center">
+    <div className="h-[calc(100vh-4rem)] bg-base-300 flex items-center justify-center">
 
-      <div className="flex relative w-full max-w-6xl rounded-lg shadow-cl h-[800px]">
+      <div className="flex relative w-full max-w-6xl rounded-xl overflow-hidden shadow-cl h-[800px] border border-base-300/50">
         {/* LEFT SIDE */}
-        <div className="w-80 backdrop-blur-sm flex flex-col bg-base-200">
+        <div className="w-80 backdrop-blur-sm flex flex-col bg-base-100 border-r border-base-500/50">
           <ProfileHeader />
           <ActiveTabSwitch />
 

@@ -2,13 +2,22 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
+import type { AxiosError } from "axios";
+
+type ApiErrorBody = { message?: string };
+type UpdateProfilePictureInput = { profilePic: string };
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const axiosError = error as AxiosError<ApiErrorBody>;
+  return axiosError?.response?.data?.message || fallback;
+}
 
 interface UserState {
   isUpdatingProfilePicture: boolean;
   isUpdatingProfile: boolean;
   isUpdatingEmail: boolean;
   isUpdatingPassword: boolean;
-  updateProfilePicture: (data: any) => Promise<void>;
+  updateProfilePicture: (data: UpdateProfilePictureInput) => Promise<void>;
   updateFirstName: (firstName: string) => Promise<void>;
   updateLastName: (lastName: string) => Promise<void>;
   updateEmail: (email: string) => Promise<void>;
@@ -27,8 +36,8 @@ export const useUserStore = create<UserState>((set) => ({
       const res = await axiosInstance.put("/user/profile-picture", data);
       useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("Profile picture updated successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to update profile picture"));
     } finally {
       set({ isUpdatingProfilePicture: false });
     }
@@ -40,8 +49,8 @@ export const useUserStore = create<UserState>((set) => ({
       const res = await axiosInstance.put("/user/profile", { firstName });
       useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("First name updated successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to update first name"));
     } finally {
       set({ isUpdatingProfile: false });
     }
@@ -53,8 +62,8 @@ export const useUserStore = create<UserState>((set) => ({
       const res = await axiosInstance.put("/user/profile", { lastName });
       useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("Last name updated successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to update last name"));
     } finally {
       set({ isUpdatingProfile: false });
     }
@@ -66,8 +75,8 @@ export const useUserStore = create<UserState>((set) => ({
       const res = await axiosInstance.put("/user/profile", { email });
       useAuthStore.getState().updateAuthUser(res.data.user);
       toast.success("Email updated successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to update email"));
     } finally {
       set({ isUpdatingEmail: false });
     }
@@ -78,13 +87,13 @@ export const useUserStore = create<UserState>((set) => ({
     try {
       await axiosInstance.put("/user/password", {
         currentPassword,
-        newPassword
+        newPassword,
       });
       toast.success("Password updated successfully");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to update password"));
     } finally {
       set({ isUpdatingPassword: false });
     }
-  }
+  },
 }));

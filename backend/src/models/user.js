@@ -35,6 +35,11 @@ const userSchema = mongoose.Schema({
     isLocked: {
         type: Boolean,
         default: false
+    },
+    status: {
+      type: String,
+      enum: ['Active', 'Banned', 'Locked'],
+      default: 'Active'
     }
 }, { timestamps: true });
 
