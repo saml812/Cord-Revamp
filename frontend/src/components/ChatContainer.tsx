@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useChatStore } from "../stores/useChatStore";
 import ChatHeader from "./ChatHeader";
@@ -15,9 +15,11 @@ function ChatContainer() {
     isMessagesLoading,
     subscribeToMessages,
     unsubscribeFromMessages,
+    sendMessage,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef<HTMLDivElement | null>(null);
+  const [isQuickSending, setIsQuickSending] = useState(false);
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -33,7 +35,7 @@ function ChatContainer() {
   }, [messages]);
 
   if (!selectedUser) {
-    return <NoChatHistoryPlaceholder name="Select a chat" />;
+    return <NoChatHistoryPlaceholder name="Select a chat" isDisabled />;
   }
 
   const selectedUserName =
@@ -102,7 +104,18 @@ function ChatContainer() {
         ) : isMessagesLoading ? (
           <MessagesLoadingSkeleton />
         ) : (
-          <NoChatHistoryPlaceholder name={selectedUserName} />
+          <NoChatHistoryPlaceholder
+            name={selectedUserName}
+            isDisabled={isMessagesLoading || isQuickSending}
+            onQuickSend={async (text) => {
+              try {
+                setIsQuickSending(true);
+                await sendMessage({ text });
+              } finally {
+                setIsQuickSending(false);
+              }
+            }}
+          />
         )}
       </div>
 

@@ -12,12 +12,15 @@ function getApiErrorMessage(error: unknown, fallback: string) {
   return axiosError?.response?.data?.message || fallback;
 }
 
+const SELECTED_CHAT_USER_ID_KEY = "selectedChatUserId";
+
 interface ChatStore {
   contacts: User[];
   chats: User[];
   messages: Message[];
   activeTab: "chats" | "contacts";
   selectedUser: User | null;
+  selectedUserId: string | null;
   isUsersLoading: boolean;
   isMessagesLoading: boolean;
   isSoundEnabled: boolean;
@@ -40,6 +43,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messages: [],
   activeTab: "chats",
   selectedUser: null,
+  selectedUserId: localStorage.getItem(SELECTED_CHAT_USER_ID_KEY),
   isUsersLoading: false,
   isMessagesLoading: false,
   isSoundEnabled:
@@ -52,13 +56,26 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   },
 
   setActiveTab: (tab: "chats" | "contacts") => set({ activeTab: tab }),
-  setSelectedUser: (selectedUser: User | null) => set({ selectedUser }),
+  setSelectedUser: (selectedUser: User | null) => {
+    const nextId = selectedUser?._id ?? null;
+    if (nextId) localStorage.setItem(SELECTED_CHAT_USER_ID_KEY, nextId);
+    else localStorage.removeItem(SELECTED_CHAT_USER_ID_KEY);
+
+    set({ selectedUser, selectedUserId: nextId });
+  },
 
   getContacts: async () => {
     set({ isUsersLoading: true });
     try {
       const res = await axiosInstance.get<User[]>("/messages/contacts");
       set({ contacts: res.data });
+
+      // restore selected chat from contacts if needed
+      const { selectedUser, selectedUserId } = get();
+      if (!selectedUser && selectedUserId) {
+        const restored = res.data.find((u) => u._id === selectedUserId);
+        if (restored) set({ selectedUser: restored });
+      }
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to fetch contacts"));
     } finally {
@@ -71,6 +88,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     try {
       const res = await axiosInstance.get<User[]>("/messages/chats");
       set({ chats: res.data });
+
+      // restore selected chat from chats if needed
+      const { selectedUser, selectedUserId } = get();
+      if (!selectedUser && selectedUserId) {
+        const restored = res.data.find((u) => u._id === selectedUserId);
+        if (restored) set({ selectedUser: restored });
+      }
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to fetch chats"));
     } finally {
@@ -125,15 +149,22 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     socket.off("newMessage");
     socket.on("newMessage", (newMessage: Message) => {
-      const { selectedUser, messages } = get();
+      const { selectedUser, messages, isSoundEnabled } = get();
       if (!selectedUser) return;
 
-      const isForThisChat =
+      const isForOpenChat =
         newMessage.senderId === selectedUser._id || newMessage.receiverId === selectedUser._id;
-      if (!isForThisChat) return;
+      if (!isForOpenChat) return;
 
       if (messages.some((m) => m._id === newMessage._id)) return;
+
       set({ messages: [...messages, newMessage] });
+
+      if (isSoundEnabled) {
+        const notificationSound = new Audio("/sounds/notification.mp3");
+        notificationSound.currentTime = 0;
+        notificationSound.play().catch((e) => console.log("Audio play failed:", e));
+      }
     });
   },
 
